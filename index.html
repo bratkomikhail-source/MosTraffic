@@ -5,13 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Направление движения по мосту</title>
 <style>
-  /* Общие стили */
   body {
-    margin: 0;
+    margin:0;
     font-family: Arial, sans-serif;
-    background: #000;
-    color: #fff;
-    display: flex;
+    background:#000;
+    color:#fff;
+    display:flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -20,32 +19,24 @@
     box-sizing: border-box;
     text-align: center;
   }
-
-  /* Стрелка */
   .arrow {
-    font-size: 25vw; /* адаптивный размер по ширине */
-    max-font-size: 160px; /* ограничение на больших экранах */
-    line-height: 1;
-    transition: 0.5s;
+    font-size: 25vw;
+    max-font-size: 160px;
+    line-height:1;
+    transition:0.5s;
   }
-
-  /* Основной текст */
   .text {
-    font-size: 8vw; /* адаптивный размер */
-    font-weight: bold;
+    font-size: 8vw;
+    font-weight:bold;
     margin: 20px 0;
-    transition: 0.5s;
+    transition:0.5s;
   }
-
-  /* Информация о интервале и времени */
   .info {
-    font-size: 5vw; /* адаптивный размер */
-    color: #ccc;
+    font-size: 5vw;
+    color:#ccc;
     margin-top: 10px;
   }
-
-  /* Ограничение максимальных размеров на больших экранах */
-  @media (min-width: 600px) {
+  @media (min-width: 600px){
     .arrow { font-size: 160px; }
     .text { font-size: 48px; }
     .info { font-size: 28px; }
@@ -58,7 +49,8 @@
 <div class="text" id="text">ДВИЖЕНИЕ С ЛЕВОГО БЕРЕГА</div>
 <div class="info">
   <div>Интервал: <span id="interval">05:00 – 08:29</span></div>
-  <div id="time">Омское время: 00:00</div>
+  <div id="time">Омское время: 00:00:00</div>
+  <div id="countdown">До смены: 00:00:00</div>
 </div>
 
 <script>
@@ -80,31 +72,65 @@ function getBridgeStatus() {
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
     const totalMinutes = hours * 60 + minutes;
-
+    
     for (let s of schedule) {
         if (totalMinutes >= s[0] && totalMinutes <= s[1]) {
-            return {text: "ДВИЖЕНИЕ " + s[2], arrow: s[3], color: s[4], interval: s[5]};
+            return {
+                text: "ДВИЖЕНИЕ " + s[2],
+                arrow: s[3],
+                color: s[4],
+                interval: s[5],
+                nextChangeMinutes: s[1] + 1,
+                nowSeconds: hours*3600 + minutes*60 + seconds
+            };
         }
     }
-    return {text: "ДВИЖЕНИЕ С ПРАВОГО БЕРЕГА", arrow: "⬅️", color: "#004085", interval: "23:00 – 04:59"};
+    // Ночной интервал
+    return {
+        text: "ДВИЖЕНИЕ С ПРАВОГО БЕРЕГА",
+        arrow: "⬅️",
+        color: "#004085",
+        interval: "23:00 – 04:59",
+        nextChangeMinutes: 300, // 05:00
+        nowSeconds: hours*3600 + minutes*60 + seconds
+    };
 }
 
 function updateBridgeStatus() {
     const status = getBridgeStatus();
+
+    // обновление стрелки, текста и цвета
     document.getElementById('arrow').textContent = status.arrow;
     const textEl = document.getElementById('text');
     textEl.textContent = status.text;
     textEl.style.color = status.color;
     document.getElementById('interval').textContent = status.interval;
 
+    // текущее время
     const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    document.getElementById('time').textContent = `Омское время: ${hh}:${mm}`;
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    document.getElementById('time').textContent = `Омское время: ${hh}:${mm}:${ss}`;
+
+    // обратный отсчёт до смены
+    let nextChangeSec;
+    if (status.nextChangeMinutes > ((now.getHours()*60)+now.getMinutes())) {
+        nextChangeSec = (status.nextChangeMinutes*60) - status.nowSeconds;
+    } else {
+        // если ночной переход через полночь
+        nextChangeSec = (24*60*60 - status.nowSeconds) + (status.nextChangeMinutes*60);
+    }
+
+    const cdH = String(Math.floor(nextChangeSec/3600)).padStart(2,'0');
+    const cdM = String(Math.floor((nextChangeSec%3600)/60)).padStart(2,'0');
+    const cdS = String(nextChangeSec%60).padStart(2,'0');
+    document.getElementById('countdown').textContent = `До смены: ${cdH}:${cdM}:${cdS}`;
 }
 
-// Запуск обновления каждые секунду
+// обновление каждую секунду
 updateBridgeStatus();
 setInterval(updateBridgeStatus, 1000);
 </script>
