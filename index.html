@@ -12,9 +12,7 @@
     color:#fff;
     display:flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    min-height: 100vh;
     padding: 20px;
     box-sizing: border-box;
     text-align: center;
@@ -36,10 +34,28 @@
     color:#ccc;
     margin-top: 10px;
   }
+  table {
+    width: 100%;
+    max-width: 500px;
+    margin-top: 20px;
+    border-collapse: collapse;
+  }
+  th, td {
+    border: 1px solid #555;
+    padding: 8px;
+    text-align: center;
+  }
+  th {
+    background: #222;
+  }
+  td {
+    font-size: 4vw;
+  }
   @media (min-width: 600px){
     .arrow { font-size: 160px; }
     .text { font-size: 48px; }
     .info { font-size: 28px; }
+    td { font-size: 18px; }
   }
 </style>
 </head>
@@ -52,6 +68,19 @@
   <div id="time">Омское время: 00:00:00</div>
   <div id="countdown">До смены: 00:00:00</div>
 </div>
+
+<!-- Таблица интервалов -->
+<table>
+  <thead>
+    <tr>
+      <th>Интервал</th>
+      <th>Направление</th>
+    </tr>
+  </thead>
+  <tbody id="schedule-table">
+    <!-- JS заполнит таблицу -->
+  </tbody>
+</table>
 
 <script>
 const schedule = [
@@ -87,13 +116,12 @@ function getBridgeStatus() {
             };
         }
     }
-    // Ночной интервал
     return {
         text: "ДВИЖЕНИЕ С ПРАВОГО БЕРЕГА",
         arrow: "⬅️",
         color: "#004085",
         interval: "23:00 – 04:59",
-        nextChangeMinutes: 300, // 05:00
+        nextChangeMinutes: 300,
         nowSeconds: hours*3600 + minutes*60 + seconds
     };
 }
@@ -101,26 +129,23 @@ function getBridgeStatus() {
 function updateBridgeStatus() {
     const status = getBridgeStatus();
 
-    // обновление стрелки, текста и цвета
     document.getElementById('arrow').textContent = status.arrow;
     const textEl = document.getElementById('text');
     textEl.textContent = status.text;
     textEl.style.color = status.color;
     document.getElementById('interval').textContent = status.interval;
 
-    // текущее время
     const now = new Date();
     const hh = String(now.getHours()).padStart(2,'0');
     const mm = String(now.getMinutes()).padStart(2,'0');
     const ss = String(now.getSeconds()).padStart(2,'0');
     document.getElementById('time').textContent = `Омское время: ${hh}:${mm}:${ss}`;
 
-    // обратный отсчёт до смены
+    // обратный отсчёт
     let nextChangeSec;
     if (status.nextChangeMinutes > ((now.getHours()*60)+now.getMinutes())) {
         nextChangeSec = (status.nextChangeMinutes*60) - status.nowSeconds;
     } else {
-        // если ночной переход через полночь
         nextChangeSec = (24*60*60 - status.nowSeconds) + (status.nextChangeMinutes*60);
     }
 
@@ -130,7 +155,24 @@ function updateBridgeStatus() {
     document.getElementById('countdown').textContent = `До смены: ${cdH}:${cdM}:${cdS}`;
 }
 
-// обновление каждую секунду
+// Заполнение таблицы интервалов
+function populateTable() {
+    const tbody = document.getElementById('schedule-table');
+    schedule.forEach(s => {
+        const tr = document.createElement('tr');
+        const tdInterval = document.createElement('td');
+        tdInterval.textContent = s[5];
+        const tdDirection = document.createElement('td');
+        tdDirection.textContent = s[2] + ' ' + s[3];
+        tdDirection.style.color = s[4];
+        tr.appendChild(tdInterval);
+        tr.appendChild(tdDirection);
+        tbody.appendChild(tr);
+    });
+}
+
+// Инициализация
+populateTable();
 updateBridgeStatus();
 setInterval(updateBridgeStatus, 1000);
 </script>
