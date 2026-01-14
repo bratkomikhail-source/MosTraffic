@@ -67,6 +67,7 @@
   <div>Интервал: <span id="interval">05:00 – 08:29</span></div>
   <div id="time">Омское время: 00:00:00</div>
   <div id="countdown">До смены: 00:00:00</div>
+  <div id="next-interval">Следующий интервал: С ПРАВОГО БЕРЕГА 08:30 – 09:29</div>
 </div>
 
 <!-- Таблица интервалов -->
@@ -85,7 +86,7 @@
 <script>
 const schedule = [
     [300, 509,  "С ЛЕВОГО БЕРЕГА",  "➡️", "#1e7e34", "05:00 – 08:29"],
-    [510, 569,  "С ПРАВОГО БЕРЕГА", "⬅️", "#FFD700", "08:30 – 09:29"], // ярко-жёлтый
+    [510, 569,  "С ПРАВОГО БЕРЕГА", "⬅️", "#FFD700", "08:30 – 09:29"],
     [570, 659,  "С ЛЕВОГО БЕРЕГА",  "➡️", "#1e7e34", "09:30 – 10:59"],
     [660, 734,  "С ПРАВОГО БЕРЕГА", "⬅️", "#FFD700", "11:00 – 12:14"],
     [735, 824,  "С ЛЕВОГО БЕРЕГА",  "➡️", "#1e7e34", "12:15 – 13:44"],
@@ -106,15 +107,19 @@ function getBridgeStatus() {
     const seconds = now.getSeconds();
     const totalMinutes = hours * 60 + minutes;
     
-    for (let s of schedule) {
+    for (let i=0; i<schedule.length; i++) {
+        const s = schedule[i];
         if (totalMinutes >= s[0] && totalMinutes <= s[1]) {
+            // индекс следующего интервала
+            const nextIndex = (i + 1) % schedule.length;
             return {
                 text: "ДВИЖЕНИЕ " + s[2],
                 arrow: s[3],
                 color: s[4],
                 interval: s[5],
                 nextChangeMinutes: s[1] + 1,
-                nowSeconds: hours*3600 + minutes*60 + seconds
+                nowSeconds: hours*3600 + minutes*60 + seconds,
+                nextInterval: schedule[nextIndex][2] + ' ' + schedule[nextIndex][5]
             };
         }
     }
@@ -146,6 +151,9 @@ function updateBridgeStatus() {
     const cdM = String(Math.floor((nextChangeSec%3600)/60)).padStart(2,'0');
     const cdS = String(nextChangeSec%60).padStart(2,'0');
     document.getElementById('countdown').textContent = `До смены: ${cdH}:${cdM}:${cdS}`;
+
+    // следующий интервал
+    document.getElementById('next-interval').textContent = `Следующий интервал: ${status.nextInterval}`;
 }
 
 function populateTable() {
